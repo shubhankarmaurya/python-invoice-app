@@ -17,8 +17,9 @@ SPREADSHEET_ID = "1oHZaMlRgjshM-iQmB05l7ph-3tb_fRtGKeBKY-8OzqI"
 gs_json = os.getenv("GOOGLE_CREDS_JSON")
 if not gs_json:
     raise RuntimeError("Set the GOOGLE_CREDS_JSON env var")
-gc = json.loads(gs_json)
-# gc = gspread.service_account(filename="credentials.json")
+gs_credentials_dict = json.loads(gs_json)
+# Create a Client object—NOT just a dict
+gc = gspread.service_account_from_dict(gs_credentials_dict)
 
 # Setup Firebase Admin SDK
 fb_json = os.getenv("FIREBASE_CREDS_JSON")
