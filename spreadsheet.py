@@ -20,13 +20,16 @@ if not gs_json:
 gs_credentials_dict = json.loads(gs_json)
 # 2) Normalize escaped newlines in your private key, if needed
 gs_creds = json.loads(gs_json)
-key = gs_creds.get("private_key", "")
-if "\\n" in key:
-    gs_creds["private_key"] = key.replace("\\n", "\n")
+# 3) Normalize the private_key field exactly as you did for Firebase
+pk = gs_creds.get("private_key", "")
+# if it contains the two characters "\" + "n", replace them with a real newline:
+if "\\n" in pk:
+    gs_creds["private_key"] = pk.replace("\\n", "\n")
+# also trim any leading/trailing whitespace just in case
+gs_creds["private_key"] = gs_creds["private_key"].strip()
 
-# Create a Client object—NOT just a dict
-gc = gspread.service_account_from_dict(gs_credentials_dict)
-
+# 4) Now build the gspread client
+gc = gspread.service_account_from_dict(gs_creds)
 # Setup Firebase Admin SDK
 fb_json = os.getenv("FIREBASE_CREDS_JSON")
 if not fb_json:
