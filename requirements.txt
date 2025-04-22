@@ -84,7 +84,10 @@ pytesseract==0.3.13
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-jwt==4.1.0
-python-magic-bin==0.4.28
+# Windows developer machines get python-magic-bin
+python-magic-bin==0.4.14; sys_platform == "win32"
+# Everything else (Linux/Render, macOS CI, etc.) gets python-magic
+python-magic==0.4.28; sys_platform != "win32"
 pytz==2025.1
 requests==2.32.3
 requests-oauthlib==2.0.0
