@@ -19,6 +19,7 @@ if not gs_json:
     raise RuntimeError("Set the GOOGLE_CREDS_JSON env var")
 gs_credentials_dict = json.loads(gs_json)
 # 2) Normalize escaped newlines in your private key, if needed
+gs_creds = json.loads(gs_json)
 key = gs_creds.get("private_key", "")
 if "\\n" in key:
     gs_creds["private_key"] = key.replace("\\n", "\n")
