@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Invoice Data</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+    table {
+      width: 95%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #f3f3f3;
+      font-weight: bold;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .invoice-container {
+      margin-bottom: 30px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      background: #fff;
+    }
+    .invoice-header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .total-summary {
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: right;
+      padding-right: 5%;
+    }
+  </style>
+</head>
+<body>
+
+  <h2 style="text-align: center;">All Invoices</h2>
+  <div id="invoiceWrapper"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDLFqVgTY-Kgu05LjMMTo-cWOAzPFxxC7U",
+      authDomain: "otp-f08ed.firebaseapp.com",
+      projectId: "otp-f08ed",
+      storageBucket: "otp-f08ed.appspot.com",
+      messagingSenderId: "817414475181",
+      appId: "1:817414475181:web:ce599cb9fc03144d1da524"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const wrapper = document.getElementById("invoiceWrapper");
+
+    db.collection("invoices")
+      .orderBy("timestamp", "desc")
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const items = data.items || [];
+
+          const timestamp = data.timestamp
+            ? new Date(data.timestamp.seconds ? data.timestamp.seconds * 1000 : data.timestamp).toLocaleString()
+            : "Unknown";
+
+          const card = document.createElement("div");
+          card.className = "invoice-container";
+
+          const header = document.createElement("div");
+          header.className = "invoice-header";
+          header.innerHTML = `
+            <h3>Invoice No: ${data.invoice_no}</h3>
+            <p>Date: ${data.date} | Due Date: ${data.due_date} | Uploaded: ${timestamp}</p>
+          `;
+          card.appendChild(header);
+
+          const table = document.createElement("table");
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>Sr</th>
+                <th>Invoice No</th>
+                <th>Date / Due Date / Uploaded</th>
+                <th>Description</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((item, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${data.invoice_no}</td>
+                  <td>${data.date} / ${data.due_date} / ${timestamp}</td>
+                  <td>${item.description}</td>
+                  <td>${item.unit_price}</td>
+                  <td>${item.quantity}</td>
+                  <td>${item.total}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          `;
+          card.appendChild(table);
+
+          const totalSummary = document.createElement("div");
+          totalSummary.className = "total-summary";
+          totalSummary.innerHTML = `
+            <p>Subtotal: ${data.subtotal}</p>
+            <p>Tax (%): ${data.tax_percent}</p>
+            <p><strong>Total: ${data.total}</strong></p>
+          `;
+          card.appendChild(totalSummary);
+
+          wrapper.appendChild(card);
+        });
+      })
+      .catch(err => {
+        console.error("Error retrieving invoices:", err);
+      });
+  </script>
+
+</body>
+</html>
