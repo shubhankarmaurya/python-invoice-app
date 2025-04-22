@@ -18,6 +18,11 @@ gs_json = os.getenv("GOOGLE_CREDS_JSON")
 if not gs_json:
     raise RuntimeError("Set the GOOGLE_CREDS_JSON env var")
 gs_credentials_dict = json.loads(gs_json)
+# 2) Normalize escaped newlines in your private key, if needed
+key = gs_creds.get("private_key", "")
+if "\\n" in key:
+    gs_creds["private_key"] = key.replace("\\n", "\n")
+
 # Create a Client object—NOT just a dict
 gc = gspread.service_account_from_dict(gs_credentials_dict)
 
