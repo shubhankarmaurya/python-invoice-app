@@ -13,39 +13,60 @@ logging.basicConfig(level=logging.INFO)
 # Spreadsheet ID from URL: https://docs.google.com/spreadsheets/d/<ID>/edit
 SPREADSHEET_ID = "1oHZaMlRgjshM-iQmB05l7ph-3tb_fRtGKeBKY-8OzqI"
 
-# Initialize gspread with service account
-gs_json = os.getenv("GOOGLE_CREDS_JSON")
-if not gs_json:
-    raise RuntimeError("Set the GOOGLE_CREDS_JSON env var")
-gs_credentials_dict = json.loads(gs_json)
-# 2) Normalize escaped newlines in your private key, if needed
-gs_creds = json.loads(gs_json)
-# 3) Normalize the private_key field exactly as you did for Firebase
-pk = gs_creds.get("private_key", "")
-# if it contains the two characters "\" + "n", replace them with a real newline:
-if "\\n" in pk:
-    gs_creds["private_key"] = pk.replace("\\n", "\n")
-# also trim any leading/trailing whitespace just in case
-gs_creds["private_key"] = gs_creds["private_key"].strip()
+try:
+    # Get Google Sheet credentials from environment
+    gs_json = os.getenv("GOOGLE_CREDS_JSON")
+    if not gs_json:
+        logger.error("GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable not set")
+        raise RuntimeError("Set the GOOGLE_APPLICATION_CREDENTIALS_JSON env var")
+    
+    # Parse JSON and normalize the private key
+    gs_creds = json.loads(gs_json)
+    pk = gs_creds.get("private_key", "")
+    
+    # Replace escaped newlines with real newlines
+    if "\\n" in pk:
+        gs_creds["private_key"] = pk.replace("\\n", "\n")
+    
+    # Trim any leading/trailing whitespace
+    gs_creds["private_key"] = gs_creds["private_key"].strip()
+    
+    # Build the gspread client
+    gc = gspread.service_account_from_dict(gs_creds)
+    
+    # Open spreadsheet by ID
+    spreadsheet = gc.open_by_key(SPREADSHEET_ID)
+    summary_sheet = spreadsheet.worksheet("Sheet1")
+    item_sheet = spreadsheet.worksheet("Sheet2")
+    
+    logger.info("✅ Successfully connected to Google Sheets")
+    
+    # Initialize Firebase Admin SDK if environment variable exists
+    fb_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+    if fb_json:
+        fb_creds = json.loads(fb_json)
+        # Fix newlines in private key for Firebase too
+        if "private_key" in fb_creds:
+            pk = fb_creds["private_key"]
+            if "\\n" in pk:
+                fb_creds["private_key"] = pk.replace("\\n", "\n")
+            fb_creds["private_key"] = fb_creds["private_key"].strip()
+        
+        cred = credentials.Certificate(fb_creds)
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        logger.info("✅ Successfully connected to Firebase")
+    else:
+        logger.warning("⚠️ FIREBASE_CREDENTIALS_JSON not set, Firebase functionality will be disabled")
+        db = None
 
-# 4) Now build the gspread client
-gc = gspread.service_account_from_dict(gs_creds)
-# Setup Firebase Admin SDK
-fb_json = os.getenv("FIREBASE_CREDS_JSON")
-if not fb_json:
-    raise RuntimeError("Set the FIREBASE_CREDS_JSON env var")
-fb_creds = json.loads(fb_json)
-cred = credentials.Certificate(fb_creds)
-firebase_admin.initialize_app(cred)
-# firebase_admin.initialize_app(cred)
-
-# Open spreadsheet by ID
-spreadsheet = gc.open_by_key(SPREADSHEET_ID)
-summary_sheet = spreadsheet.worksheet("Sheet1")
-item_sheet = spreadsheet.worksheet("Sheet2")
-
-# Initialize Firestore client
-db = firestore.client()
+except json.JSONDecodeError as e:
+    logger.error(f"❌ Error parsing JSON credentials: {e}")
+    logger.debug(f"First 100 chars of credentials: {gs_json[:100] if gs_json else 'None'}")
+    raise
+except Exception as e:
+    logger.error(f"❌ Error during initialization: {e}")
+    raise
 
 def safe_get(data, keys):
     """Safely get nested data."""
@@ -62,7 +83,7 @@ def get_party_name(party_data):
         return ""
     return party_data.get("company", "") or party_data.get("name", "")
 
-def insert_into_sheet(data, user_email):
+def insert_into_sheet(data, user_email="unknown@example.com"):
     try:
         # Use email as username display (optional: fetch name from Firestore)
         user_name = user_email
