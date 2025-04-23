@@ -30,9 +30,9 @@ def get_credentials_json():
             return creds
     
     # Check if credentials.json file exists as fallback
-    if os.path.exists("GOOGLE_CREDS_JSON.json"):
+    if os.path.exists("credentials.json"):
         logger.info("Using credentials.json file")
-        with open("GOOGLE_CREDS_JSON.json", "r") as f:
+        with open("credentials.json", "r") as f:
             return f.read()
             
     return None
