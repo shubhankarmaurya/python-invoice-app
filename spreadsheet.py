@@ -17,10 +17,10 @@ SPREADSHEET_ID = "1oHZaMlRgjshM-iQmB05l7ph-3tb_fRtGKeBKY-8OzqI"
 def get_credentials_json():
     """Try different environment variable names for credentials"""
     possible_vars = [
-        "GOOGLE_APPLICATION_CREDENTIALS_JSON",
+        # "GOOGLE_APPLICATION_CREDENTIALS_JSON",
         "GOOGLE_CREDS_JSON",
-        "GOOGLE_CREDENTIALS",
-        "GOOGLE_SERVICE_ACCOUNT"
+        # "GOOGLE_CREDENTIALS",
+        # "GOOGLE_SERVICE_ACCOUNT"
     ]
     
     for var_name in possible_vars:
@@ -30,9 +30,9 @@ def get_credentials_json():
             return creds
     
     # Check if credentials.json file exists as fallback
-    if os.path.exists("credentials.json"):
+    if os.path.exists("GOOGLE_CREDS_JSON.json"):
         logger.info("Using credentials.json file")
-        with open("credentials.json", "r") as f:
+        with open("GOOGLE_CREDS_JSON.json", "r") as f:
             return f.read()
             
     return None
